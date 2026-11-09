@@ -1,0 +1,20 @@
+citHeader("To cite kmaudit in publications, please cite:")
+
+bibentry(
+  bibtype = "Article",
+  title = "Measuring Kaplan--Meier Overestimation Under Competing Risks: Event Ordering, Quantification, and Exact Inference",
+  author = person("Ferran", "Espuny-Pujol"),
+  year = "2026",
+  journal = "arXiv",
+  eprint = "<arXiv identifier>",
+  url = "https://arxiv.org/abs/<identifier>"
+)
+
+bibentry(
+  bibtype = "Manual",
+  title = "kmaudit: Diagnostics for Kaplan--Meier Overestimation Under Competing Risks",
+  author = person("Ferran", "Espuny-Pujol"),
+  year = "2026",
+  note = "R package version 1.0.0",
+  url = "https://github.com/fespuny/kmaudit"
+)

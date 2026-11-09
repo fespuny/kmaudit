@@ -1,0 +1,19 @@
+# R / RStudio
+.Rhistory
+.RData
+.Rproj.user/
+
+# Built vignette/install artefacts
+doc/
+Meta/
+
+# Local rendered previews
+README.html
+vignettes/*.html
+
+# Generated manuscript outputs
+paper/figures/output/
+paper/data/source/output/
+
+# Private simulation preparation
+paper/data-raw/

@@ -1,0 +1,269 @@
+---
+title: "Auditing Kaplan-Meier Overestimation with kmaudit"
+author: "Ferran Espuny-Pujol"
+output:
+  rmarkdown::html_vignette:
+vignette: >
+  %\VignetteIndexEntry{Auditing Kaplan-Meier Overestimation with kmaudit}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>", message = FALSE, warning = FALSE,
+  fig.width = 8, fig.height = 5.2, fig.retina = 2, dpi = 144,
+  out.width = "100%"
+)
+```
+
+<style>
+body { max-width: 900px; font-size: 15px; line-height: 1.5; }
+h1, h2 { color: #25364a; }
+.result-box { margin: 1.2em 0; padding: 1em 1.2em; border-left: 5px solid #D62728; background: #faf4f4; }
+.workflow-box { margin: 1.2em 0; padding: 1em 1.2em; border-left: 5px solid #1F78B4; background: #f3f7fb; }
+table { width: max-content; max-width: 100%; margin: 1em auto; }
+.figure { margin: 1.5em 0; }
+</style>
+
+# Why audit Kaplan-Meier risks?
+
+Competing events are frequently treated as censoring in Kaplan-Meier (KM)
+analyses. The resulting KM complements estimate hypothetical net risks rather
+than real-world event probabilities and can exceed the corresponding
+cumulative incidence estimates.
+
+`kmaudit` provides a lightweight diagnostic layer for 
+measuring and interpreting KM overestimation and 
+assessing competing risks relevance in routine analyses.
+
+The package implements two complementary quantities:
+
+- the **Total Overestimation Diagnostic (TOD)** quantifies total KM
+  overestimation across event types;
+- the **Order Index (OI)** summarises the temporal allocation of an event
+  of interest relative to competing events.
+
+This vignette demonstrates the resulting audit workflow using the classical 
+monoclonal gammopathy of undetermined significance (MGUS) cohort.
+
+The methodology and inferential results implemented in kmaudit are developed in 
+Espuny-Pujol (2026).
+
+# Clinical example: progression or death in MGUS
+
+The MGUS data contain 241 individuals followed for progression to a
+plasma cell malignancy (PCM) or death before progression.
+
+```{r load-data}
+library(kmaudit)
+library(survival)
+library(cmprsk)
+
+mgus <- survival::mgus
+target_time <- 25
+
+mgus$time <- ifelse(is.na(mgus$pctime), mgus$futime,
+                    pmin(mgus$pctime, mgus$futime)) / 365.25
+mgus$ev <- ifelse(!is.na(mgus$pctime) & mgus$pctime <= mgus$futime, 1L,
+                  ifelse(mgus$death == 1, 2L, 0L))
+
+mgus$ev[mgus$time > target_time] <- 0L
+mgus$time <- pmin(mgus$time, target_time)
+```
+
+The event indicator is coded as:
+
+- `0`: censored or event free at 25 years;
+- `1`: progression to PCM;
+- `2`: death before progression.
+
+```{r status-table, echo=FALSE, results='asis'}
+x <- table(factor(
+  mgus$ev, levels = 0:2,
+  labels = c("Censored or event free", "Progression to PCM",
+             "Death before progression")
+))
+
+knitr::kable(
+  data.frame(
+    Status = names(x), N = as.integer(x),
+    Percentage = sprintf("%.1f%%", 100 * x / sum(x))
+  ),
+  align = c("l", "r", "r"),
+  caption = "MGUS outcomes after administrative censoring at 25 years."
+)
+```
+
+# Quantifying total KM overestimation
+
+A TOD audit requires only follow-up time and the competing risks event
+indicator:
+
+```{r fit}
+fit <- tod( time = mgus$time, status = mgus$ev, censor = 0 )
+```
+
+TOD can be evaluated at selected follow-up horizons.
+
+```{r results-table, echo=FALSE, results='asis'}
+audit <- summary(fit, times = c(5, 10, 15, 20, 25))
+
+knitr::kable(
+  data.frame(
+    Years = audit$time,
+    TOD = sprintf("%.3f", audit$TOD),
+    `Lower 95% CI` = sprintf("%.3f", audit$TOD_lower),
+    `Upper 95% CI` = sprintf("%.3f", audit$TOD_upper),
+    check.names = FALSE
+  ),
+  align = c("r", "r", "r", "r"),
+  caption = "Total Overestimation Diagnostic for the MGUS cohort."
+)
+```
+
+```{r headline-values, include=FALSE}
+result_25 <- summary(fit, times = target_time)
+mean_tod <- mean(summary(fit)$TOD)
+```
+
+<div class="result-box">
+
+**MGUS audit at 25 years.** TOD is
+`r sprintf("%.3f", result_25$TOD)`, with a 95% confidence interval from
+`r sprintf("%.3f", result_25$TOD_lower)` to
+`r sprintf("%.3f", result_25$TOD_upper)`.
+
+Thus, the sum of the naive cause-specific KM risks exceeds the corresponding
+real-world cumulative incidences by approximately
+`r sprintf("%.1f", 100 * result_25$TOD)` percentage points at 25 years.
+
+</div>
+
+TOD accumulates monotonically over follow-up. The associated confidence band
+follows directly from Product Limit Error Equivalence, which transfers
+ordinary product limit survival uncertainty to TOD.
+
+```{r tod-figure, fig.cap="**Total Overestimation Diagnostic** for the MGUS cohort. The red step curve is TOD, the shaded region is its 95% confidence interval, and the dashed line denotes the descriptive mean TOD over observed follow-up.", fig.alt="Total Overestimation Diagnostic over 25 years in the MGUS cohort, with a 95 percent confidence band and dashed line showing mean over follow-up time"}
+plot(fit, xlab = "Years", mean_label = "short")
+```
+
+The mean TOD across the observed follow-up grid is
+`r sprintf("%.1f%%", 100 * mean_tod)`. This provides a descriptive summary
+across follow-up, whereas TOD = `r sprintf("%.3f", result_25$TOD)` at 25 years
+quantifies total overestimation at the prespecified administrative horizon.
+
+# Examining an event of interest
+
+The TOD at 25 years is substantial in this example. If scientific interest
+centres on a particular event, the next step is to compare its naive KM risk
+with the corresponding cumulative incidence.
+
+For progression to PCM:
+
+```{r event-specific}
+km_pcm <- survfit(Surv(time, ev == 1) ~ 1, data = mgus)
+km_risk <- 1 - summary(km_pcm, times = target_time, extend = TRUE)$surv
+
+cif_fit <- cuminc(mgus$time, mgus$ev)
+pcm_cif <- cif_fit[["1 1"]]
+cif <- approx(pcm_cif$time, pcm_cif$est, xout = target_time,
+              method = "constant", rule = 2)$y
+
+overestimation <- km_risk - cif
+```
+
+```{r event-specific-table, echo=FALSE, results='asis'}
+knitr::kable(
+  data.frame(
+    Quantity = c("Naive KM risk", "Cumulative incidence",
+                 "KM-CIF overestimation"),
+    Value = sprintf("%.3f", c(km_risk, cif, overestimation))
+  ),
+  align = c("l", "r"),
+  caption = "Event specific assessment of PCM at 25 years."
+)
+```
+
+At 25 years, the naive KM risk for PCM exceeds its cumulative incidence by
+`r sprintf("%.3f", overestimation)` (`r sprintf("%.1f", 100 * overestimation)`
+percentage points).
+
+TOD provides the global assessment of KM overestimation,
+whereas KM-CIF quantifies the discrepancy for a particular event of interest.
+
+# Interpreting temporal event allocation
+
+TOD measures how much total overestimation is present. OI addresses a
+different question: how are the event of interest and competing event
+temporally allocated?
+
+For PCM as the event of interest and death as the competing event:
+
+```{r oi}
+mgus_oi <- oi(mgus$time, mgus$ev, interest = 1, competing = 2)
+mgus_oi
+```
+
+The OI is defined so that:
+
+- **OI near 0:** events of interest tend to occur earlier;
+- **OI near 1:** competing events tend to occur earlier;
+- **OI near 0.5:** temporal ordering is approximately balanced.
+
+The MGUS OI is `r sprintf("%.3f", mgus_oi)`, indicating approximately
+balanced temporal allocation between progression and competing mortality.
+
+Cross-cause events recorded at identical times contribute `0.5` by default,
+avoiding an arbitrary preference for either event type.
+
+Importantly, OI is **not** a measure of overestimation magnitude. TOD provides
+the total assessment, cause-specific KM-minus-cumulative-incidence comparisons
+quantify overestimation for a particular event type, and OI helps interpret those
+discrepancies through temporal event allocation.
+
+# Recommended audit workflow
+
+<div class="workflow-box">
+
+1. **Assess total KM overestimation.**  
+   Compute TOD and its confidence interval. Judge its magnitude against a
+   tolerance appropriate to the scientific application. If TOD is negligible,
+   no further event specific assessment of KM overestimation is required.
+
+2. **Examine an event of interest when necessary.**  
+   If TOD is non-negligible and scientific interest centres on a particular
+   event, compare its naive KM risk with the corresponding cumulative
+   incidence.
+
+3. **Interpret temporal event allocation.**  
+   Use OI to characterise whether competing events tend to occur before or
+   after the event of interest.
+
+</div>
+
+# Scope and interpretation
+
+TOD is a global diagnostic: a small TOD bounds cause-specific KM
+overestimation across all event types. OI serves a different purpose and
+does not measure overestimation magnitude; it helps interpret event specific
+discrepancies through temporal event allocation.
+
+`kmaudit` is a diagnostic layer rather than a competing-risks estimation
+framework. It does not replace established Kaplan-Meier or Aalen-Johansen
+estimation. Survival curves, cumulative incidence functions, regression
+models, and related competing-risks analyses should continue to be fitted
+with established software such as `survival` and `cmprsk`.
+
+The current implementation assumes standard competing-risks data with
+independent right censoring. Delayed entry, interval censoring, recurrent
+events, and covariate-adjusted diagnostics are outside the current scope.
+
+# Citation
+
+If `kmaudit` contributes to an analysis, cite the package and accompanying
+methodological article. Package citation information is available through:
+
+```{r citation, eval=FALSE}
+citation("kmaudit")
+```

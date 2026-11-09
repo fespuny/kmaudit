@@ -1,0 +1,8 @@
+^\.github$
+^paper$
+^README\.Rmd$
+^.*\.Rproj$
+^\.Rproj\.user$
+^LICENSE\.md$
+^LICENSING\.md$
+^CITATION\.cff$
