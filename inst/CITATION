@@ -15,6 +15,6 @@ bibentry(
   title = "kmaudit: Diagnostics for Kaplan--Meier Overestimation Under Competing Risks",
   author = person("Ferran", "Espuny-Pujol"),
   year = "2026",
-  note = "R package version 1.0.0",
+  note = "R package version 1.0-0",
   url = "https://github.com/fespuny/kmaudit"
 )
