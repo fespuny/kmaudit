@@ -44,6 +44,10 @@ mgus$ev <- ifelse(!is.na(mgus$pctime) & mgus$pctime <= mgus$futime, 1L,
 
 mgus$ev[mgus$time > target_time] <- 0L
 mgus$time <- pmin(mgus$time, target_time)
+
+mgus_oi <- oi(mgus$time, mgus$ev, interest = 1, competing = 2)
+fit <- tod(mgus$time, mgus$ev)
+tod_25 <- summary(fit, times = target_time)$TOD
 ```
 
 ```r
@@ -51,16 +55,16 @@ library(kmaudit)
 
 fit <- tod(mgus$time, mgus$ev)
 
-summary(fit, times = 25)
-confint(fit, times = 25)
+summary(fit, times = `r target_time`)
+confint(fit, times = `r target_time`)
 ```
 
-At 25 years, TOD is approximately **0.287**: the summed cause-specific KM
-risks exceed the corresponding cumulative incidences by approximately
-**28.7 percentage points**.
+At `r target_time` years, TOD is approximately **`r sprintf("%.3f", tod_25)`**: 
+the summed cause-specific KM risks exceed the corresponding cumulative incidences 
+by approximately **`r sprintf("%.1f", 100 * tod_25)` percentage points**.
 
 ```{r tod-plot, echo=FALSE, fig.width=8, fig.height=5.2, fig.path="man/figures/README-", out.width="100%"}
-plot( fit, xlab = "Years", mean_label = "short" )
+plot( fit, xlab = "Years", ylab = "Total Overestimation", mean_label = "short" )
 ```
 
 TOD is non-negative and accumulates monotonically over follow-up. Its
@@ -85,7 +89,7 @@ OI summarises pairwise temporal ordering relative to an event of interest:
 oi( mgus$time, mgus$ev, interest = 1, competing = 2 )
 ```
 
-For the MGUS cohort, OI is approximately **0.502**.
+For the MGUS cohort, OI is approximately **`r sprintf("%.3f", mgus_oi)`**.
 
 - **OI near 0:** the event of interest tends to occur earlier;
 - **OI near 1:** competing events tend to occur earlier;
