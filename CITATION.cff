@@ -9,3 +9,14 @@ version: 1.0.0
 date-released: 2026-11-09
 repository-code: "https://github.com/fespuny/kmaudit"
 license: MIT
+
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Espuny-Pujol
+      given-names: Ferran
+  title: "Measuring Kaplan-Meier Overestimation Under Competing Risks: Event Ordering, Quantification, and Exact Inference"
+  year: 2026
+  journal: "arXiv"
+  doi: "10.48550/arXiv.2611.14457"
+  url: "https://doi.org/10.48550/arXiv.2611.14457"
