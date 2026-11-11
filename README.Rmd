@@ -8,10 +8,8 @@ output: github_document
 
 <!-- badges: start -->
 <!-- R-CMD-check and MIT badges added for v1.0.0 -->
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24134374.svg)]
-(https://doi.org/10.5281/zenodo.24134374)
-[![R-CMD-check](https://github.com/fespuny/kmaudit/actions/workflows/R-CMD-check.yaml/badge.svg)]
-(https://github.com/fespuny/kmaudit/actions/workflows/R-CMD-check.yaml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24134374.svg)](https://doi.org/10.5281/zenodo.24134374)
+[![R-CMD-check](https://github.com/fespuny/kmaudit/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fespuny/kmaudit/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 <!-- badges: end -->
 
