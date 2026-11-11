@@ -24,9 +24,8 @@ allocation.**
 The methodology implemented in `kmaudit` is developed in:
 
 > Espuny-Pujol F. (2026). *Measuring Kaplan-Meier Overestimation Under
-> Competing Risks: Event Ordering, Quantification, and Exact
-> Inference*.  
-> arXiv:2611.14457. <https://doi.org/10.48550/arXiv.2611.14457>
+> Competing Risks: Event Ordering, Quantification, and Exact Inference*.
+> [arXiv:2611.14457](https://doi.org/10.48550/arXiv.2611.14457).
 
 ## Installation
 
