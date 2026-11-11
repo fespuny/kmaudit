@@ -13,11 +13,17 @@ output: github_document
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 <!-- badges: end -->
 
-`kmaudit` provides a lightweight diagnostic layer for assessing
-Kaplan-Meier (KM) risk overestimation in competing-risks analyses.
+`kmaudit` provides a lightweight diagnostic layer for measuring and interpreting 
+Kaplan-Meier (KM) overestimation and assessing competing risks relevance 
+in routine analyses.
 
-**TOD assesses total KM overestimation. KM-CIF provides event-specific
-quantification when needed. OI interprets temporal event allocation.**
+**TOD assesses total KM overestimation. KM-CIF provides overestimation quantification for a particular event type. OI interprets temporal event allocation.**
+
+The methodology implemented in `kmaudit` is developed in:
+
+> Espuny-Pujol F. (2026). *Measuring Kaplan-Meier Overestimation Under
+> Competing Risks: Event Ordering, Quantification, and Exact Inference*.  
+> arXiv:2611.14457. https://doi.org/10.48550/arXiv.2611.14457
 
 ## Installation
 
@@ -30,7 +36,7 @@ pak::pak("fespuny/kmaudit")
 
 ## Quick start
 
-The example below uses the 25-year MGUS competing-risks analysis from the
+The example below uses the 25 year MGUS competing risks analysis from the
 accompanying methodological article.
 
 ```{r setup, include=FALSE}
@@ -80,7 +86,7 @@ confidence interval follows directly from Product Limit Error Equivalence.
 
 2. **Examine an event of interest when necessary.**  
    If TOD is non-negligible and interest centres on a particular event,
-   compare its naive KM risk with the corresponding cumulative incidence.
+   use a KM-CIF comparison to quantify its cause-specific overestimation.
 
 3. **Interpret temporal event allocation with OI.**
 
@@ -130,9 +136,9 @@ source("paper/clean_reproduce.R")
 
 ## Scope
 
-`kmaudit` is a diagnostic layer for standard competing-risks analyses. It
+`kmaudit` is a diagnostic layer for standard competing risks analyses. It
 does not replace Kaplan-Meier, Aalen-Johansen, regression, or other
-established survival-analysis methods.
+established survival analysis methods.
 
 The current implementation assumes a standard competing risks setting 
 with independent right censoring.
